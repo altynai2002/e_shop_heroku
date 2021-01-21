@@ -9,8 +9,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .filters import ProductFilter
-from .models import Product, Category
-from .serializers import ProductSerializer, CategorySerializer, CreateUpdateProductSerializer
+from .models import Product, Category, Comment
+from .serializers import ProductSerializer, CategorySerializer,\
+    CreateUpdateProductSerializer, CommentSerializer, ProductListSerializer
 
 
 # @api_view(['GET'])
@@ -70,7 +71,9 @@ class ProductViewSet(viewsets.ModelViewSet):
     filter_class = ProductFilter
 
     def get_serializer_class(self):
-        if self.action == 'list' or self.action == 'retrieve':
+        if self.action == 'list':
+            return ProductListSerializer
+        elif self.action == 'retrieve':
             return ProductSerializer
         return CreateUpdateProductSerializer
 
@@ -90,3 +93,13 @@ class ProductViewSet(viewsets.ModelViewSet):
                             Q(description__icontains=q))
         serializer = ProductSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CommentCreate(CreateAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [p.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
